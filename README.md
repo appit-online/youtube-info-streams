@@ -201,60 +201,7 @@ console.log(video);
                },
                "approxDurationMs":"120099"
             },
-            {
-               "itag":137,
-               "url":"https://r2---sn-4g5ednse.googlevideo.com/videoplayback?expire=1589124190&ei=_se3XsWoFPuB6dsPyt-HgAE&ip=185.68.78.136&id=o-AKV_qdEhqEcruWvGW6tIwDFM4yghTrrH7JgFDJ3zf_Rc&itag=137&aitags=133%2C134%2C135%2C136%2C137%2C160%2C242%2C243%2C244%2C247%2C248%2C271%2C278%2C298%2C299%2C302%2C303%2C308&source=youtube&requiressl=yes&mh=gB&mm=31%2C29&mn=sn-4g5ednse%2Csn-4g5e6nzl&ms=au%2Crdu&mv=m&mvi=1&pl=22&initcwndbps=1263750&vprv=1&mime=video%2Fmp4&gir=yes&clen=3885920&dur=120.099&lmt=1579530849637951&mt=1589102501&fvip=2&keepalive=yes&c=WEB&txp=6216222&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJpPlLswRAIgPpipYMOSdg6b8dlJZAJfWnRuK7QJgCboO_rh3KfpFj8CIHy3YZeEggvzxbptKhfkqLsT8TcMI7fh5cFk4waRW2IV&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps&lsig=ALrAebAwRQIhAKM2M5UA36KaSeNHX_IMYcn0L4cye6j_RAWvF5GY6Th-AiBpue0bWaYLqgVvLy6MEUMSOamrf7PqpzdQKvwlCN6lEQ%3D%3D&ratebypass=yes",
-               "mimeType":"video/mp4; codecs=\"avc1.64001f\"",
-               "bitrate":652682,
-               "width":498,
-               "height":1080,
-               "initRange":{
-                  "start":"0",
-                  "end":"742"
-               },
-               "indexRange":{
-                  "start":"743",
-                  "end":"1062"
-               },
-               "lastModified":"1579530849637951",
-               "contentLength":"3885920",
-               "quality":"large",
-               "fps":30,
-               "qualityLabel":"480p",
-               "projectionType":"RECTANGULAR",
-               "averageBitrate":258847,
-               "approxDurationMs":"120099"
-            },
-            {
-               "itag":248,
-               "url":"https://r2---sn-4g5ednse.googlevideo.com/videoplayback?expire=1589124190&ei=_se3XsWoFPuB6dsPyt-HgAE&ip=185.68.78.136&id=o-AKV_qdEhqEcruWvGW6tIwDFM4yghTrrH7JgFDJ3zf_Rc&itag=248&aitags=133%2C134%2C135%2C136%2C137%2C160%2C242%2C243%2C244%2C247%2C248%2C271%2C278%2C298%2C299%2C302%2C303%2C308&source=youtube&requiressl=yes&mh=gB&mm=31%2C29&mn=sn-4g5ednse%2Csn-4g5e6nzl&ms=au%2Crdu&mv=m&mvi=1&pl=22&initcwndbps=1263750&vprv=1&mime=video%2Fwebm&gir=yes&clen=2219517&dur=120.099&lmt=1579530858251369&mt=1589102501&fvip=2&keepalive=yes&c=WEB&txp=6216222&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cgir%2Cclen%2Cdur%2Clmt&sig=AJpPlLswRAIgR6z4eJ8RAgTY6ySNtmtNadIvTuFeyZp_DaXOoYb9HfICIH4FBBRB_gmGGbuJ4AAKJfQv62-46FqKWvkTqc0Zs2u8&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Cinitcwndbps&lsig=ALrAebAwRQIhAKM2M5UA36KaSeNHX_IMYcn0L4cye6j_RAWvF5GY6Th-AiBpue0bWaYLqgVvLy6MEUMSOamrf7PqpzdQKvwlCN6lEQ%3D%3D&ratebypass=yes",
-               "mimeType":"video/webm; codecs=\"vp9\"",
-               "bitrate":244024,
-               "width":498,
-               "height":1080,
-               "initRange":{
-                  "start":"0",
-                  "end":"219"
-               },
-               "indexRange":{
-                  "start":"220",
-                  "end":"618"
-               },
-               "lastModified":"1579530858251369",
-               "contentLength":"2219517",
-               "quality":"large",
-               "fps":30,
-               "qualityLabel":"480p",
-               "projectionType":"RECTANGULAR",
-               "averageBitrate":147845,
-               "colorInfo":{
-                  "primaries":"COLOR_PRIMARIES_BT709",
-                  "transferCharacteristics":"COLOR_TRANSFER_CHARACTERISTICS_BT709",
-                  "matrixCoefficients":"COLOR_MATRIX_COEFFICIENTS_BT709"
-               },
-               "approxDurationMs":"120099"
-            },
-           ...
+          ...
          ]
       },
       "playbackTracking":{

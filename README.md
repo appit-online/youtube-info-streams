@@ -1,4 +1,4 @@
-# [youtube-info-stream: Node.js](https://github.com/appit-online/youtube-info-stream)
+# [youtube-info-streams: Node.js](https://github.com/appit-online/youtube-info-streams)
 
 Fetch meta information about YouTube videos including stream urls
 
@@ -23,7 +23,7 @@ npm install youtube-info-streams --save
 ### Using the library
 
 ```javascript
-import * as yt from 'youtube-info-stream';
+import * as yt from 'youtube-info-streams';
 
 /**
  * Given a search query, searching on youtube
@@ -578,7 +578,7 @@ console.log(video);
 ```
 
 ```javascript
-const yt = require('youtube-info-stream');
+const yt = require('youtube-info-streams');
 
 /**
  * Given a search query, searching on youtube
@@ -599,4 +599,4 @@ Node.js.
 
 Apache Version 2.0
 
-See [LICENSE](https://github.com/appit-online/youtube-info-stream/blob/master/LICENSE)
+See [LICENSE](https://github.com/appit-online/youtube-info-streams/blob/master/LICENSE)

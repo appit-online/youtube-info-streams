@@ -1,6 +1,6 @@
 {
   "name": "youtube-info-streams",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fetch meta information about YouTube videos including stream urls",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/appit-online/youtube-info-stream.git"
+    "url": "git+https://github.com/appit-online/youtube-info-streams.git"
   },
   "keywords": [
     "youtube",
@@ -41,9 +41,9 @@
     "lib/**/*"
   ],
   "bugs": {
-    "url": "https://github.com/appit-online/youtube-info-stream/issues"
+    "url": "https://github.com/appit-online/youtube-info-streams/issues"
   },
-  "homepage": "https://github.com/appit-online/youtube-info-stream#readme",
+  "homepage": "https://github.com/appit-online/youtube-info-streams#readme",
   "devDependencies": {
     "@types/jest": "^25.2.1",
     "@types/node": "^13.11.0",

@@ -16,50 +16,46 @@ export class YTubeService {
   INFO_HOST = 'www.youtube.com';
   INFO_PATH = '/get_video_info';
 
-  async gotConfig(id: any, additional: any, config: any, fromEmbed: any) {
-    if (!config) {
-      throw new Error('Could not find player config');
+  async gotConfig(id: any, additional: any, info: any, body: any) {
+    // tslint:disable-next-line:variable-name
+    let player_response =
+      info.player && info.player.args && info.player.args.player_response;
+    if (!player_response) {
+      const url = urllib.format({
+        protocol: 'https',
+        host: this.INFO_HOST,
+        pathname: this.INFO_PATH,
+        query: {
+          video_id: id,
+          eurl: this.VIDEO_EURL + id,
+          ps: 'default',
+          gl: 'US',
+          hl: 'en',
+          sts: info.sts,
+        },
+      });
+
+      const respo = await got.get(url, {});
+      const moreinfo: any = querystring.parse(respo.body);
+      player_response = moreinfo.args.player_response || info.playerResponse;
     }
-    try {
-      config = JSON.parse(config + (fromEmbed ? '}' : ''));
-    } catch (err) {
-      throw new Error('Error parsing config: ' + err.message);
-    }
-    const url = urllib.format({
-      protocol: 'https',
-      host: this.INFO_HOST,
-      pathname: this.INFO_PATH,
-      query: {
-        video_id: id,
-        eurl: this.VIDEO_EURL + id,
-        ps: 'default',
-        gl: 'US',
-        hl: 'en',
-        sts: config.sts,
-      },
-    });
-
-    const respo = await got.get(url, {});
-    const info: any = querystring.parse(respo.body);
-
-    const playerResponse = config.args.player_response || info.player_response;
-
-    if (info.status === 'fail') {
-      throw new Error(`Code ${info.errorcode}: ${this.stripHTML(info.reason)}`);
+    if (typeof player_response === 'object') {
+      info.player_response = player_response;
     } else {
       try {
-        info.player_response = JSON.parse(playerResponse);
+        info.player_response = JSON.parse(player_response);
       } catch (err) {
-        throw new Error('Error parsing `player_response`: ' + err.message);
+        throw Error(`Error parsing \`player_response\`: ${err.message}`);
       }
     }
 
-    const playability = info.player_response.playabilityStatus;
-    if (playability && playability.status === 'UNPLAYABLE') {
-      throw new Error(playability.reason);
-    }
-
     info.formats = this.parseFormats(info);
+
+    info.videoDetails = Object.assign({},
+      info.player_response.microformat.playerMicroformatRenderer,
+      info.player_response.videoDetails, additional);
+    info.html5player = info.player && info.player.assets && info.player.assets.js;
+
     // Add additional properties to info.
     Object.assign(info, additional, {
       video_id: id,
@@ -73,8 +69,6 @@ export class YTubeService {
       length_seconds: info.player_response.videoDetails && info.player_response.videoDetails.lengthSeconds,
     });
 
-    info.age_restricted = fromEmbed;
-    info.html5player = config.assets.js;
     return info;
   }
 
@@ -142,4 +136,58 @@ export class YTubeService {
       callback(null, results);
     }
   }
+  cutAfterJSON(mixedJson: any){
+    let open;
+    let close;
+    if (mixedJson[0] === '[') {
+      open = '[';
+      close = ']';
+    } else if (mixedJson[0] === '{') {
+      open = '{';
+      close = '}';
+    }
+
+    if (!open) {
+      throw new Error(`Can't cut unsupported JSON (need to begin with [ or { ) but got: ${mixedJson[0]}`);
+    }
+
+    // States if the loop is currently in a string
+    let isString = false;
+
+    // Current open brackets to be closed
+    let counter = 0;
+
+    let i;
+    for (i = 0; i < mixedJson.length; i++) {
+      // Toggle the isString boolean when leaving/entering string
+      if (mixedJson[i] === '"' && mixedJson[i - 1] !== '\\') {
+        isString = !isString;
+        continue;
+      }
+      if (isString) continue;
+
+      if (mixedJson[i] === open) {
+        counter++;
+      } else if (mixedJson[i] === close) {
+        counter--;
+      }
+
+      // All brackets have been closed, thus end of JSON is reached
+      if (counter === 0) {
+        // Return the cut JSON
+        return mixedJson.substr(0, i + 1);
+      }
+    }
+
+    // We ran through the whole string and ended up with an unclosed bracket
+    throw Error("Can't cut unsupported JSON (no matching closing bracket found)");
+  };
+
+  playError(info: any, status: any) {
+    const playability = info.playerResponse.playabilityStatus;
+    if (playability && playability.status === status) {
+      return Error(playability.reason || (playability.messages && playability.messages[0]));
+    }
+    return null;
+  };
 }

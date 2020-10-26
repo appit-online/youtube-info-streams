@@ -1,6 +1,6 @@
 {
   "name": "youtube-info-streams",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Fetch meta information about YouTube videos including stream urls",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

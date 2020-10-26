@@ -15,15 +15,16 @@ export async function searchVideo(youtubeId: string) {
   const tubeService = new YTubeService();
   const ciphService = new CiphService();
 
-  const params = 'hl=en';
+  const params = '?hl=en';
 
-  const ytApi = tubeService.VIDEO_URL + youtubeId + '&pbj=1&' + params +
-    '&bpctr=' + Math.ceil(Date.now() / 1000);
+  const watchPageURL = tubeService.VIDEO_URL + youtubeId + params + '&bpctr=' + Math.ceil(Date.now() / 1000);
+  const ytApi = `${watchPageURL}&pbj=1`;
 
   const response = await got.get(ytApi, {headers: {
     'x-youtube-client-name': '1',
     'x-youtube-client-version': '2.20191008.04.01',
-  }});
+      'x-youtube-identity-token': '',
+    }});
   const body = response.body;
 
   let info;
@@ -44,7 +45,7 @@ export async function searchVideo(youtubeId: string) {
     const url = tubeService.EMBED_URL + youtubeId + '?hl=en';
     const responseEmbeded = await got.get(url, {});
 
-    const jsonStr = tubeService.between(responseEmbeded.body, 't.setConfig({\'PLAYER_CONFIG\': ', '</script>');
+    const jsonStr = tubeService.between(responseEmbeded.body, /(['"])PLAYER_(CONFIG|VARS)\1:\s?/, '</script>');
     let config;
     if (!jsonStr) {
       throw Error('Could not find player config');
@@ -58,7 +59,8 @@ export async function searchVideo(youtubeId: string) {
 
     // @ts-ignore
     playErr = tubeService.playError(info, 'LOGIN_REQUIRED');
-    if (!config.args.player_response && !config.args.embedded_player_response && playErr) {
+    if ((!config.args || (!config.args.player_response && !config.args.embedded_player_response)) &&
+      !config.embedded_player_response && playErr) {
       throw playErr;
     }
     // @ts-ignore

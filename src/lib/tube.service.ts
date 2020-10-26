@@ -37,7 +37,7 @@ export class YTubeService {
 
       const respo = await got.get(url, {});
       const moreinfo: any = querystring.parse(respo.body);
-      player_response = moreinfo.args.player_response || info.playerResponse;
+      player_response = moreinfo.player_response || info.playerResponse;
     }
     if (typeof player_response === 'object') {
       info.player_response = player_response;
@@ -101,10 +101,18 @@ export class YTubeService {
 * Extract string inbetween another.
 */
   between(haystack: any, left: any, right: any) {
-    let pos = indexOf(haystack, left);
-    if (pos === -1) { return ''; }
-    haystack = haystack.slice(pos + left.length);
-    pos = indexOf(haystack, right);
+    let pos;
+    if (left instanceof RegExp) {
+      const match = haystack.match(left);
+      if (!match) { return ''; }
+      pos = match.index + match[0].length;
+    } else {
+      pos = haystack.indexOf(left);
+      if (pos === -1) { return ''; }
+      pos += left.length;
+    }
+    haystack = haystack.slice(pos);
+    pos = haystack.indexOf(right);
     if (pos === -1) { return ''; }
     haystack = haystack.slice(0, pos);
     return haystack;

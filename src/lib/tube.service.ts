@@ -20,6 +20,7 @@ export class YTubeService {
     // tslint:disable-next-line:variable-name
     let player_response =
       info.player && info.player.args && info.player.args.player_response;
+
     if (!player_response) {
       const url = urllib.format({
         protocol: 'https',
@@ -31,13 +32,16 @@ export class YTubeService {
           ps: 'default',
           gl: 'US',
           hl: 'en',
-          sts: info.sts,
+          html5: 1,
         },
       });
 
-      const respo = await got.get(url, {});
+      const respo = await got.get(url, {headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36'
+        }});
+
       const moreinfo: any = querystring.parse(respo.body);
-      player_response = moreinfo.player_response || info.playerResponse;
+      player_response = moreinfo.player_response || info.playerResponse || info.embedded_player_response;
     }
     if (typeof player_response === 'object') {
       info.player_response = player_response;

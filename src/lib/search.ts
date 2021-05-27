@@ -17,13 +17,13 @@ export async function searchVideo(youtubeId: string) {
 
   const params = '?hl=en';
 
-  const watchPageURL = tubeService.VIDEO_URL + youtubeId + params + '&bpctr=' + Math.ceil(Date.now() / 1000);
+  const watchPageURL = tubeService.VIDEO_URL + youtubeId + params;
   const ytApi = `${watchPageURL}&pbj=1`;
 
   const response = await got.get(ytApi, {headers: {
     'x-youtube-client-name': '1',
-    'x-youtube-client-version': '2.20191008.04.01',
-      'x-youtube-identity-token': '',
+    'x-youtube-client-version': '2.20201203.06.00',
+    //  'x-youtube-identity-token': '',
     }});
   const body = response.body;
 
@@ -67,9 +67,10 @@ export async function searchVideo(youtubeId: string) {
     info.player = config;
 
   }
-  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, body);
 
-  if (infoResponse.formats.length > 0) {
+  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, body);
+  return infoResponse
+ /* if (infoResponse.formats.length > 0) {
     const html5playerfile = urllib.resolve(tubeService.VIDEO_URL, infoResponse.html5player);
     const tokens = await ciphService.getTokens(html5playerfile);
 
@@ -85,5 +86,5 @@ export async function searchVideo(youtubeId: string) {
     return infoResponse;
   } else {
     return null;
-  }
+  }*/
 }

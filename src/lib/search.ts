@@ -34,7 +34,7 @@ export async function searchVideo(youtubeId: string) {
     throw Error(`Error parsing info: ${err.message}`);
   }
 
-  let playErr = tubeService.playError(info, 'ERROR');
+  const playErr = tubeService.playError(info, 'ERROR');
   if (playErr) {
     throw playErr;
   }

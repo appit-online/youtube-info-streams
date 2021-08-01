@@ -2,7 +2,7 @@ import got from 'got';
 import * as urllib from 'url';
 import {YTubeService} from './tube.service';
 import {CiphService} from './cip.service';
-
+const cver = '2.20210622.10.00';
 
 const mergeFormats = (info: any, formatsMap: any) => {
   info.formats.forEach((f: any) => {
@@ -19,10 +19,10 @@ export async function searchVideo(youtubeId: string) {
 
   const watchPageURL = tubeService.VIDEO_URL + youtubeId + params;
   const ytApi = `${watchPageURL}&pbj=1`;
-
+  // getWatchJSONPage
   const response = await got.get(ytApi, {headers: {
     'x-youtube-client-name': '1',
-    'x-youtube-client-version': '2.20201203.06.00',
+    'x-youtube-client-version': cver,
     //  'x-youtube-identity-token': '',
     }});
   const body = response.body;
@@ -39,7 +39,7 @@ export async function searchVideo(youtubeId: string) {
     throw playErr;
   }
 
-  if (!info.player) {
+ /* if (!info.player) {
     // If the video page doesn't work, maybe because it has mature content.
     // and requires an account logged in to view, try the embed page.
     const url = tubeService.EMBED_URL + youtubeId + '?hl=en';
@@ -66,9 +66,9 @@ export async function searchVideo(youtubeId: string) {
     // @ts-ignore
     info.player = config;
 
-  }
+  }*/
 
-  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, body);
+  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, cver);
   return infoResponse
  /* if (infoResponse.formats.length > 0) {
     const html5playerfile = urllib.resolve(tubeService.VIDEO_URL, infoResponse.html5player);

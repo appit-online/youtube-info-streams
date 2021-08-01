@@ -8,6 +8,7 @@ const indexOf = (haystack: any, needle: any) => {
   return needle instanceof RegExp ?
     haystack.search(needle) : haystack.indexOf(needle);
 };
+const jsonClosingChars = /^[)\]}'\s]+/;
 
 export class YTubeService {
   VIDEO_URL = 'https://www.youtube.com/watch?v=';
@@ -16,12 +17,14 @@ export class YTubeService {
   INFO_HOST = 'www.youtube.com';
   INFO_PATH = '/get_video_info';
 
-  async gotConfig(id: any, additional: any, info: any, body: any) {
+  async gotConfig(id: any, additional: any, info: any, cver: any) {
     // tslint:disable-next-line:variable-name
     let player_response =
-      info.player && info.player.args && info.player.args.player_response;
+        info && (
+        (info.args && info.args.player_response) ||
+        info.player_response || info.playerResponse || info.embedded_player_response);
 
-    if (!player_response) {
+  /*  if (!player_response) {
       const url = urllib.format({
         protocol: 'https',
         host: this.INFO_HOST,
@@ -30,6 +33,8 @@ export class YTubeService {
           video_id: id,
           eurl: this.VIDEO_EURL + id,
           ps: 'default',
+          c: 'TVHTML5',
+          cver: `7${cver.substr(1)}`,
           gl: 'US',
           hl: 'en',
           html5: 1,
@@ -42,11 +47,13 @@ export class YTubeService {
 
       const moreinfo: any = querystring.parse(respo.body);
       player_response = moreinfo.player_response || info.playerResponse || info.embedded_player_response;
-    }
-    if (typeof player_response === 'object') {
+    }*/
+    if (!player_response || typeof player_response === 'object') {
       info.player_response = player_response;
     } else {
       try {
+        player_response = player_response.replace(jsonClosingChars, '');
+
         info.player_response = JSON.parse(player_response);
       } catch (err) {
         throw Error(`Error parsing \`player_response\`: ${err.message}`);

@@ -30,7 +30,7 @@ export async function searchVideo(youtubeId: string) {
   let info;
   try {
     info = JSON.parse(body).reduce((part: any, curr: any) => Object.assign(curr, part), {});
-  } catch (err) {
+  } catch (err: any) {
     throw Error(`Error parsing info: ${err.message}`);
   }
 

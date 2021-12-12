@@ -177,7 +177,7 @@ export class CiphService {
 
     try {
       decodedUrl = decodeURIComponent(decodedUrl);
-    } catch (err) {
+    } catch (err: any) {
       if (debug) {
         // tslint:disable-next-line:no-console
         console.warn('Could not decode url: ' + err.message);

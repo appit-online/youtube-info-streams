@@ -55,7 +55,7 @@ export class YTubeService {
         player_response = player_response.replace(jsonClosingChars, '');
 
         info.player_response = JSON.parse(player_response);
-      } catch (err) {
+      } catch (err: any) {
         throw Error(`Error parsing \`player_response\`: ${err.message}`);
       }
     }

@@ -1,90 +1,55 @@
 import got from 'got';
-import * as urllib from 'url';
 import {YTubeService} from './tube.service';
-import {CiphService} from './cip.service';
-const cver = '2.20210622.10.00';
-
-const mergeFormats = (info: any, formatsMap: any) => {
-  info.formats.forEach((f: any) => {
-    formatsMap[f.itag] = f;
-  });
-  info.formats = Object.values(formatsMap);
-};
 
 export async function searchVideo(youtubeId: string) {
   const tubeService = new YTubeService();
-  const ciphService = new CiphService();
 
-  const params = '?hl=en';
+  const params = `?hl=en&bpctr=${Math.ceil(Date.now() / 1000)}&has_verified=1`;
 
-  const watchPageURL = tubeService.VIDEO_URL + youtubeId + params;
-  const ytApi = `${watchPageURL}&pbj=1`;
-  // getWatchJSONPage
+  const watchPageURL = tubeService.BASE_URL + youtubeId + params;
+  const ytApi = `${watchPageURL}`;
+
+  // request yt page
   const response = await got.get(ytApi, {headers: {
-    'x-youtube-client-name': '1',
-    'x-youtube-client-version': cver,
-    //  'x-youtube-identity-token': '',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36',
     }});
   const body = response.body;
 
-  let info;
+  // get json from html
+  const info = { page: 'watch', player_response: '', response: '', html5player: '' };
   try {
-    info = JSON.parse(body).reduce((part: any, curr: any) => Object.assign(curr, part), {});
-  } catch (err: any) {
-    throw Error(`Error parsing info: ${err.message}`);
+    try {
+      info.player_response =
+          tubeService.tryParseBetween(body, 'var ytInitialPlayerResponse = ', '}};', '', '}}') ||
+          tubeService.tryParseBetween(body, 'var ytInitialPlayerResponse = ', ';var') ||
+          tubeService.tryParseBetween(body, 'var ytInitialPlayerResponse = ', ';</script>') ||
+          tubeService.findJSON('watch.html', 'player_response', body, /\bytInitialPlayerResponse\s*=\s*\{/i, '</script>', '{', tubeService);
+    } catch (_e) {
+      const args = tubeService.findJSON('watch.html', 'player_response', body, /\bytplayer\.config\s*=\s*{/, '</script>', '{', tubeService);
+      info.player_response = tubeService.findPlayerResponse('watch.html', args, tubeService);
+    }
+
+    info.response =
+        tubeService.tryParseBetween(body, 'var ytInitialData = ', '}};', '', '}}') ||
+        tubeService.tryParseBetween(body, 'var ytInitialData = ', ';</script>') ||
+        tubeService.tryParseBetween(body, 'window["ytInitialData"] = ', '}};', '', '}}') ||
+        tubeService.tryParseBetween(body, 'window["ytInitialData"] = ', ';</script>') ||
+        tubeService.findJSON('watch.html', 'response', body, /\bytInitialData("\])?\s*=\s*\{/i, '</script>', '{', tubeService);
+    // @ts-ignore
+    info.html5player = tubeService.getHTML5player(body);
+  } catch (_) {
+    throw Error(
+        'Error when parsing watch.html, maybe YouTube made a change: ' + body
+    );
   }
 
-  const playErr = tubeService.playError(info, 'ERROR');
+  // verify response
+  const playErr = tubeService.playError(info.player_response);
   if (playErr) {
     throw playErr;
   }
 
- /* if (!info.player) {
-    // If the video page doesn't work, maybe because it has mature content.
-    // and requires an account logged in to view, try the embed page.
-    const url = tubeService.EMBED_URL + youtubeId + '?hl=en';
-    const responseEmbeded = await got.get(url, {});
-
-    const jsonStr = tubeService.between(responseEmbeded.body, /(['"])PLAYER_(CONFIG|VARS)\1:\s?/, '</script>');
-    let config;
-    if (!jsonStr) {
-      throw Error('Could not find player config');
-    }
-
-    try {
-      config = JSON.parse(tubeService.cutAfterJSON(jsonStr));
-    } catch (err) {
-      throw Error(`Error parsing config: ${err.message}`);
-    }
-
-    // @ts-ignore
-    playErr = tubeService.playError(info, 'LOGIN_REQUIRED');
-    if ((!config.args || (!config.args.player_response && !config.args.embedded_player_response)) &&
-      !config.embedded_player_response && playErr) {
-      throw playErr;
-    }
-    // @ts-ignore
-    info.player = config;
-
-  }*/
-
-  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, cver);
+  // fetch formats and more
+  const infoResponse = await tubeService.gotConfig(youtubeId, null, info, tubeService);
   return infoResponse
- /* if (infoResponse.formats.length > 0) {
-    const html5playerfile = urllib.resolve(tubeService.VIDEO_URL, infoResponse.html5player);
-    const tokens = await ciphService.getTokens(html5playerfile);
-
-    ciphService.decipherFormats(infoResponse.formats, tokens, false);
-    const funcs: any[] = [];
-
-    tubeService.parallel(funcs, (err: any, results: any) => {
-      if (results[0]) { mergeFormats(infoResponse, results[0]); }
-      if (results[1]) { mergeFormats(infoResponse, results[1]); }
-
-      infoResponse.full = true;
-    });
-    return infoResponse;
-  } else {
-    return null;
-  }*/
 }

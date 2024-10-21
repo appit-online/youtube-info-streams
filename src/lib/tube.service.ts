@@ -1,107 +1,273 @@
 import got from 'got';
-import * as urllib from 'url';
-import * as querystring from 'querystring';
-/*
- * String#indexOf() that supports regex too.
- */
-const indexOf = (haystack: any, needle: any) => {
-  return needle instanceof RegExp ?
-    haystack.search(needle) : haystack.indexOf(needle);
-};
+
 const jsonClosingChars = /^[)\]}'\s]+/;
 
+// tslint:disable-next-line:one-variable-per-declaration
+const IOS_CLIENT_VERSION = '19.28.1',
+    IOS_DEVICE_MODEL = 'iPhone16,2',
+    IOS_USER_AGENT_VERSION = '17_5_1',
+    IOS_OS_VERSION = '17.5.1.21F90';
+
+// tslint:disable-next-line:one-variable-per-declaration
+const ANDROID_CLIENT_VERSION = '19.30.36',
+    ANDROID_OS_VERSION = '14',
+    ANDROID_SDK_VERSION = '34';
+
+/**
+ * Escape sequences for cutAfterJS
+ * @param {string} start the character string the escape sequence
+ * @param {string} end the character string to stop the escape seequence
+ * @param {undefined|Regex} startPrefix a regex to check against the preceding 10 characters
+ */
+const ESCAPING_SEQUENZES = [
+  // Strings
+  { start: '"', end: '"' },
+  { start: "'", end: "'" },
+  { start: '`', end: '`' },
+  // RegeEx
+  { start: '/', end: '/', startPrefix: /(^|[[{:;,/])\s?$/ },
+];
+
 export class YTubeService {
-  VIDEO_URL = 'https://www.youtube.com/watch?v=';
-  EMBED_URL = 'https://www.youtube.com/embed/';
-  VIDEO_EURL = 'https://youtube.googleapis.com/v/';
-  INFO_HOST = 'www.youtube.com';
-  INFO_PATH = '/get_video_info';
+  BASE_URL = 'https://www.youtube.com/watch?v=';
 
-  async gotConfig(id: any, additional: any, info: any, cver: any) {
-    // tslint:disable-next-line:variable-name
-    let player_response =
-        info && (
-        (info.args && info.args.player_response) ||
-        info.player_response || info.playerResponse || info.embedded_player_response);
 
-  /*  if (!player_response) {
-      const url = urllib.format({
-        protocol: 'https',
-        host: this.INFO_HOST,
-        pathname: this.INFO_PATH,
-        query: {
-          video_id: id,
-          eurl: this.VIDEO_EURL + id,
-          ps: 'default',
-          c: 'TVHTML5',
-          cver: `7${cver.substr(1)}`,
-          gl: 'US',
-          hl: 'en',
-          html5: 1,
-        },
-      });
+  findJSON(source: any, varName: any, body: any, left: any, right: any, prependJSON: any, tubeService: any) {
+    const jsonStr = tubeService.between(body, left, right);
+    if (!jsonStr) {
+      throw Error(`Could not find ${varName} in ${source}`);
+    }
+    return tubeService.parseJSON(source, varName, tubeService.cutAfterJS(`${prependJSON}${jsonStr}`));
+  };
 
-      const respo = await got.get(url, {headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.101 Safari/537.36'
-        }});
+  cutAfterJS(mixedJson: any){
+    // Define the general open and closing tag
+    // tslint:disable-next-line:one-variable-per-declaration
+    let open, close;
+    if (mixedJson[0] === '[') {
+      open = '[';
+      close = ']';
+    } else if (mixedJson[0] === '{') {
+      open = '{';
+      close = '}';
+    }
 
-      const moreinfo: any = querystring.parse(respo.body);
-      player_response = moreinfo.player_response || info.playerResponse || info.embedded_player_response;
-    }*/
-    if (!player_response || typeof player_response === 'object') {
-      info.player_response = player_response;
-    } else {
-      try {
-        player_response = player_response.replace(jsonClosingChars, '');
+    if (!open) {
+      throw new Error(`Can't cut unsupported JSON (need to begin with [ or { ) but got: ${mixedJson[0]}`);
+    }
 
-        info.player_response = JSON.parse(player_response);
-      } catch (err: any) {
-        throw Error(`Error parsing \`player_response\`: ${err.message}`);
+    // States if the loop is currently inside an escaped js object
+    let isEscapedObject = null;
+
+    // States if the current character is treated as escaped or not
+    let isEscaped = false;
+
+    // Current open brackets to be closed
+    let counter = 0;
+
+    let i;
+    // Go through all characters from the start
+    for (i = 0; i < mixedJson.length; i++) {
+      // End of current escaped object
+      if (!isEscaped && isEscapedObject !== null && mixedJson[i] === isEscapedObject.end) {
+        isEscapedObject = null;
+        continue;
+        // Might be the start of a new escaped object
+      } else if (!isEscaped && isEscapedObject === null) {
+        for (const escaped of ESCAPING_SEQUENZES) {
+          if (mixedJson[i] !== escaped.start) continue;
+          // Test startPrefix against last 10 characters
+          if (!escaped.startPrefix || mixedJson.substring(i - 10, i).match(escaped.startPrefix)) {
+            isEscapedObject = escaped;
+            break;
+          }
+        }
+        // Continue if we found a new escaped object
+        if (isEscapedObject !== null) {
+          continue;
+        }
+      }
+
+      // Toggle the isEscaped boolean for every backslash
+      // Reset for every regular character
+      isEscaped = mixedJson[i] === '\\' && !isEscaped;
+
+      if (isEscapedObject !== null) continue;
+
+      if (mixedJson[i] === open) {
+        counter++;
+      } else if (mixedJson[i] === close) {
+        counter--;
+      }
+
+      // All brackets have been closed, thus end of JSON is reached
+      if (counter === 0) {
+        // Return the cut JSON
+        return mixedJson.substring(0, i + 1);
       }
     }
 
-    info.formats = this.parseFormats(info);
+    // We ran through the whole string and ended up with an unclosed bracket
+    throw Error("Can't cut unsupported JSON (no matching closing bracket found)");
+  };
 
-    info.videoDetails = Object.assign({},
-      info.player_response.microformat.playerMicroformatRenderer,
-      info.player_response.videoDetails, additional);
-    info.html5player = info.player && info.player.assets && info.player.assets.js;
 
-    // Add additional properties to info.
-    Object.assign(info, additional, {
-      video_id: id,
+  findPlayerResponse (source: any, info: any, tubeService: any) {
+    // tslint:disable-next-line:variable-name
+    const player_response = info && (
+        (info.args && info.args.player_response) ||
+        info.player_response || info.playerResponse || info.embedded_player_response);
+    return tubeService.parseJSON(source, 'player_response', player_response);
+  };
 
-      // Give the standard link to the video.
-      video_url: this.VIDEO_URL + id,
+  getHTML5player(body: any) {
+    const html5playerRes =
+        /<script\s+src="([^"]+)"(?:\s+type="text\/javascript")?\s+name="player_ias\/base"\s*>|"jsUrl":"([^"]+)"/
+            .exec(body);
+    return html5playerRes ? html5playerRes[1] || html5playerRes[2] : null;
+  };
 
-      // Copy over a few props from `player_response.videoDetails`
-      // for backwards compatibility.
-      title: info.player_response.videoDetails && info.player_response.videoDetails.title,
-      length_seconds: info.player_response.videoDetails && info.player_response.videoDetails.lengthSeconds,
-    });
+  parseJSON (source: any, varName: any, json: any) {
+    if (!json || typeof json === 'object') {
+      return json;
+    } else {
+      try {
+        json = json.replace(jsonClosingChars, '');
+        return JSON.parse(json);
+      } catch (err) {
+        throw Error(`Error parsing ${varName} in ${source}: ${err}`);
+      }
+    }
+  };
+
+  async gotConfig(id: any, additional: any, info: any, tubeService: any) {
+    const funcs = [];
+    const [iosPlayerResponse, androidPlayerResponse] = await Promise.all([
+      tubeService.fetchIosJsonPlayer(id, tubeService),
+      tubeService.fetchAndroidJsonPlayer(id, tubeService),
+    ]);
+
+    info.formats = this.parseFormats(androidPlayerResponse).concat(this.parseFormats(iosPlayerResponse));
+
+    if (info.formats.length) {
+      funcs.push(info.formats);
+    }
+
+    const results = await Promise.all(funcs);
+    info.formats = Object.values(Object.assign({}, ...results));
 
     return info;
   }
 
-  stripHTML(html: any) {
-    return html
-      .replace(/[\n\r]/g, ' ')
-      .replace(/\s*<\s*br\s*\/?\s*>\s*/gi, '\n')
-      .replace(/<\s*\/\s*p\s*>\s*<\s*p[^>]*>/gi, '\n')
-      .replace(/<a\s+(?:[^>]*?\s+)?href=(?:["'])\/redirect.*?q=(.*?)(?:[&'"]).*?<\/a>/gi,
-        (_: any, p1: any) => decodeURIComponent(p1))
-      .replace(/<.*?>/gi, '')
-      .trim();
-  }
+  generateClientPlaybackNonce(length: any){
+    const CPN_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    return Array.from({ length }, () => CPN_CHARS[Math.floor(Math.random() * CPN_CHARS.length)]).join('');
+  };
+
+  async fetchIosJsonPlayer(videoId :any, tubeService:any) {
+    const payload = {
+      videoId,
+      cpn: tubeService.generateClientPlaybackNonce(16),
+      contentCheckOk: true,
+      racyCheckOk: true,
+      context: {
+        client: {
+          clientName: 'IOS',
+          clientVersion: IOS_CLIENT_VERSION,
+          deviceMake: 'Apple',
+          deviceModel: IOS_DEVICE_MODEL,
+          platform: 'MOBILE',
+          osName: 'iOS',
+          osVersion: IOS_OS_VERSION,
+          hl: 'en',
+          gl: 'US',
+          utcOffsetMinutes: -240,
+        },
+        request: {
+          internalExperimentFlags: [],
+          useSsl: true,
+        },
+        user: {
+          lockedSafetyMode: false,
+        },
+      },
+    };
+
+    // request yt page
+    const response = await got.post(`https://youtubei.googleapis.com/youtubei/v1/player?id=${videoId}&prettyPrint=false&t=`+tubeService.generateClientPlaybackNonce(12), {headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': `com.google.ios.youtube/${IOS_CLIENT_VERSION}(${
+            IOS_DEVICE_MODEL
+        }; U; CPU iOS ${IOS_USER_AGENT_VERSION} like Mac OS X; en_US)`,
+        'X-Goog-Api-Format-Version': '2',
+      }, body: JSON.stringify(payload)});
+    const body = response.body;
+
+    const playErr = tubeService.playError(body);
+    if (playErr) throw playErr;
+
+    try {
+      return JSON.parse(body);
+    }catch (e) {
+      return {};
+    }
+  };
+
+  async fetchAndroidJsonPlayer(videoId: any, tubeService: any){
+    const payload = {
+      videoId,
+      cpn: tubeService.generateClientPlaybackNonce(16),
+      contentCheckOk: true,
+      racyCheckOk: true,
+      context: {
+        client: {
+          clientName: 'ANDROID',
+          clientVersion: ANDROID_CLIENT_VERSION,
+          platform: 'MOBILE',
+          osName: 'Android',
+          osVersion: ANDROID_OS_VERSION,
+          androidSdkVersion: ANDROID_SDK_VERSION,
+          hl: 'en',
+          gl: 'US',
+          utcOffsetMinutes: -240,
+        },
+        request: {
+          internalExperimentFlags: [],
+          useSsl: true,
+        },
+        user: {
+          lockedSafetyMode: false,
+        },
+      },
+    };
+
+    // request yt page
+    const response = await got.post(`https://youtubei.googleapis.com/youtubei/v1/player?id=${videoId}&prettyPrint=false&t=`+tubeService.generateClientPlaybackNonce(12), {headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': `com.google.android.youtube/${ANDROID_CLIENT_VERSION
+        } (Linux; U; Android ${ANDROID_OS_VERSION}; en_US) gzip`,
+        'X-Goog-Api-Format-Version': '2',
+      }, body: JSON.stringify(payload)});
+    const body = response.body;
+
+    const playErr = tubeService.playError(body);
+    if (playErr) throw playErr;
+
+    try {
+      return JSON.parse(body);
+    }catch (e) {
+      return {};
+    }
+  };
 
   parseFormats(info: any) {
     let formats: any[] = [];
-    if (info.player_response.streamingData) {
-      if (info.player_response.streamingData.formats) {
-        formats = formats.concat(info.player_response.streamingData.formats);
+    if (info && info.streamingData) {
+      if (info.streamingData.formats) {
+        formats = formats.concat(info.streamingData.formats);
       }
-      if (info.player_response.streamingData.adaptiveFormats) {
-        formats = formats.concat(info.player_response.streamingData.adaptiveFormats);
+      if (info.streamingData.adaptiveFormats) {
+        formats = formats.concat(info.streamingData.adaptiveFormats);
       }
     }
     return formats;
@@ -111,6 +277,17 @@ export class YTubeService {
   /*
 * Extract string inbetween another.
 */
+
+  tryParseBetween = (body: any, left: any, right: any, prepend = '', append = '') => {
+    try {
+      const data = this.between(body, left, right);
+      if (!data) return null;
+      return JSON.parse(`${prepend}${data}${append}`);
+    } catch (e) {
+      return null;
+    }
+  };
+
   between(haystack: any, left: any, right: any) {
     let pos;
     if (left instanceof RegExp) {
@@ -202,10 +379,17 @@ export class YTubeService {
     throw Error("Can't cut unsupported JSON (no matching closing bracket found)");
   };
 
-  playError(info: any, status: any) {
-    const playability = info.playerResponse.playabilityStatus;
-    if (playability && playability.status === status) {
-      return Error(playability.reason || (playability.messages && playability.messages[0]));
+  playError(playerResponse: any) {
+    const playability = playerResponse && playerResponse.playabilityStatus;
+    if (!playability) return null;
+    if (['ERROR', 'LOGIN_REQUIRED'].includes(playability.status)) {
+      return new Error(playability.reason || (playability.messages && playability.messages[0]));
+    }
+    if (playability.status === 'LIVE_STREAM_OFFLINE') {
+      return new Error(playability.reason || 'The live stream is offline.');
+    }
+    if (playability.status === 'UNPLAYABLE') {
+      return new Error(playability.reason || 'This video is unavailable.');
     }
     return null;
   };

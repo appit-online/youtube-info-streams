@@ -3,15 +3,15 @@ import got from 'got';
 const jsonClosingChars = /^[)\]}'\s]+/;
 
 // tslint:disable-next-line:one-variable-per-declaration
-const IOS_CLIENT_VERSION = '19.28.1',
-    IOS_DEVICE_MODEL = 'iPhone16,2',
-    IOS_USER_AGENT_VERSION = '17_5_1',
-    IOS_OS_VERSION = '17.5.1.21F90';
+const IOS_CLIENT_VERSION = '20.22.1',
+    IOS_DEVICE_MODEL = 'iPhone17,2',
+    IOS_USER_AGENT_VERSION = '18_5',
+    IOS_OS_VERSION = '18.5.0.22F76';
 
 // tslint:disable-next-line:one-variable-per-declaration
-const ANDROID_CLIENT_VERSION = '19.30.36',
-    ANDROID_OS_VERSION = '14',
-    ANDROID_SDK_VERSION = '34';
+const ANDROID_CLIENT_VERSION = '20.26.35',
+    ANDROID_OS_VERSION = '16',
+    ANDROID_SDK_VERSION = '36';
 
 /**
  * Escape sequences for cutAfterJS
